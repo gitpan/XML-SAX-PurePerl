@@ -1,4 +1,4 @@
-# $Id: Stream.pm,v 1.2 2001/10/25 20:00:52 matt Exp $
+# $Id: Stream.pm,v 1.6 2001/11/02 15:26:14 matt Exp $
 
 package XML::SAX::PurePerl::Reader::Stream;
 
@@ -15,7 +15,7 @@ sub new {
     if ($] >= 5.007002) {
         eval q(binmode($ioref, ':raw');); # start in raw mode
     }
-    return bless { fh => $ioref, line => 1, col => 0, buffer => '' }, $class;
+    return bless { fh => $ioref, line => 1, col => 0, buffer => '', eof => 0 }, $class;
 }
 
 sub next {
@@ -30,9 +30,9 @@ sub next {
 #        die "Unable to read past end of file marker (b: $self->{buffer}, c: $self->{current}, m: $self->{matched})";
 #    }
     
-    my $buff;
+    my $buff = "\0";
     my $bytesread = read($self->{fh}, $buff, 1); # read 1 "byte" or character?
-    # warn("read: $buff\n");
+    # warn("read $bytesread: $buff == ", sprintf("0x%x", ord($buff)), "\n");
     if (defined($bytesread)) {
         if ($bytesread) {
             if ($buff eq "\n") {
@@ -41,6 +41,9 @@ sub next {
             } else { $self->{column}++ }
                         
             return $self->{current} = $buff;
+        }
+        else {
+            $self->{eof}++;
         }
         return undef;
     }
@@ -52,9 +55,9 @@ sub next {
 sub set_encoding {
     my $self = shift;
     my ($encoding) = @_;
-    
+    # warn("set encoding to: $encoding\n");
     if ($] >= 5.007002) {
-        eval 'binmode($self->{fh}, ":encoding($encoding)");';
+        eval q{ binmode($self->{fh}, ":encoding($encoding)") };
     }
     else {
         die "Only ASCII encoding allowed without perl 5.7.2 or higher. You tried: $encoding" if $encoding !~ /(ASCII|UTF\-?8)/i;
@@ -69,7 +72,8 @@ sub bytepos {
 
 sub eof {
     my $self = shift;
-    return CORE::eof($self->{fh});
+    return $self->{eof};
 }
 
 1;
+

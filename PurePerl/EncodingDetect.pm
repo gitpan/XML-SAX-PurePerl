@@ -1,4 +1,4 @@
-# $Id: EncodingDetect.pm,v 1.1.1.1 2001/10/25 19:44:25 matt Exp $
+# $Id: EncodingDetect.pm,v 1.6 2001/11/02 15:24:27 matt Exp $
 
 package XML::SAX::PurePerl; # NB, not ::EncodingDetect!
 
@@ -148,16 +148,25 @@ sub encoding_detect {
                 }
             }
         }
-        elsif ($reader->match_nocheck("\x3F") && 
-            $reader->match_nocheck("\x78") &&
-            $reader->match_nocheck("\x6D")) {
-                # some 7 or 8 bit charset with ASCII chars in right place
-                $reader->buffer("<?xm");
+        elsif ($reader->match_nocheck("\x3F")) {
+            if ($reader->match_nocheck("\x78")) {
+                if ($reader->match_nocheck("\x6D")) {
+                    # some 7 or 8 bit charset with ASCII chars in right place
+                    $reader->buffer("<?xm");
+                    return;
+                }
+                else {
+                    $reader->buffer('<?x');
+                    return;
+                }
+            }
+            else {
+                $reader->buffer('<?');
                 return;
+            }
         }
         else {
             # assume we have "<tag", and assume UTF-8/ASCII
-            #$reader->set_encoding("UTF-8");
             $reader->buffer("<");
             return;
         }
@@ -184,44 +193,8 @@ use Encode;
 
 Encode::define_alias( "UTF-16" => "UCS-2" );
 Encode::define_alias( "UTF-16BE" => "UCS-2" );
-
-package Encode::ucs_2le;
-use base 'Encode::Encoding';
-
-__PACKAGE__->Define(qw(UCS-2le UCS-2LE UTF-16LE));
-
-sub decode {
-    my ($obj,$str,$chk) = @_;
-    my $uni   = '';
-    while (length($str))
-    {
-        my $code = unpack('v',substr($str,0,2,'')) & 0xffff;
-        $uni .= chr($code);
-    }
-    $_[1] = $str if $chk;
-    utf8::upgrade($uni);
-    return $uni;
-}
-
-sub encode
-{
-    my ($obj,$uni,$chk) = @_;
-    my $str   = '';
-    while (length($uni))
-    {
-        my $ch = substr($uni,0,1,'');
-        my $x  = ord($ch);
-        unless ($x < 32768)
-        {
-            last if ($chk);
-            $x = 0;
-        }
-        $str .= pack('v',$x);
-    }
-    $_[1] = $uni if $chk;
-    return $str;
-}
-
+Encode::define_alias( "UTF-16LE" => "ucs-2le" );
+Encode::define_alias( "UTF16LE" => "ucs-2le" );
 PERL
 }
 

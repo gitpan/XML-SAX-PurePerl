@@ -6,7 +6,7 @@ use Carp;
 
 #use 5.7.2;
 
-$VERSION = '0.02';
+$VERSION = '0.80';
 
 use XML::SAX::PurePerl::Productions qw($S $Letter $NameChar $Any $CharMinusDash $Char);
 use XML::SAX::PurePerl::Reader;
@@ -16,7 +16,6 @@ use XML::SAX::PurePerl::DocType ();
 use XML::SAX::PurePerl::DTDDecls ();
 use XML::SAX::PurePerl::XMLDecl ();
 use IO::File;
-
 
 my %int_ents = (
         amp => '&',
@@ -54,6 +53,11 @@ sub parse {
     }
     
     $self->{ParseOptions} = _get_options($self, @_);
+
+    if (!defined $self->{ParseOptions}{Handler}) {
+        require XML::SAX::PurePerl::DebugHandler;
+        $self->{ParseOptions}{Handler} = XML::SAX::PurePerl::DebugHandler->new();
+    }
     
     if (!defined $self->{ParseOptions}{DocumentHandler}) {
         $self->{ParseOptions}{DocumentHandler} = $self->{ParseOptions}{Handler};
@@ -381,7 +385,8 @@ sub element {
             $self->content($reader);
             
             $reader->match_string('</') || $self->parser_error("No close tag marker", $reader);
-            $self->Name($reader) eq $name || $self->parser_error("End tag mismatch", $reader);
+            my $end_name = $self->Name($reader);
+            $end_name eq $name || $self->parser_error("End tag mismatch ($end_name != $name)", $reader);
             $self->skip_whitespace($reader);
             $reader->match('>') || $self->parser_error("No close '>' on end tag", $reader);
             pop @{ $self->{InScopeNamespaceStack} };
@@ -460,8 +465,25 @@ sub content {
 sub CDSect {
     my ($self, $reader) = @_;
     
-    if ($reader->match_string('<[CDATA[')) {
-        # TODO
+    if ($reader->match_string('<![CDATA[')) {
+        my $chars = '';
+        while (1) {
+            if ($reader->eof) {
+                $self->parser_error("EOF looking for CDATA section end", $reader);
+            }
+            $reader->consume(qr/[^\]]/);
+            $chars .= $reader->consumed;
+            if ($reader->match(']')) {
+                if ($reader->match_string(']>')) {
+                    # end of CDATA section
+                    
+                    $self->dochandler_method('characters', {Data => $chars});
+                    last;
+                }
+                $chars .= ']';
+            }
+        }
+        return 1;
     }
     
     return 0;
@@ -472,6 +494,8 @@ sub CharData {
     
     my $chars = '';
     while (1) {
+        $reader->consume(qr/[^<&\]]/);
+        $chars .= $reader->consumed;
         if ($reader->match(']')) {
             if ($reader->match_string(']>')) {
                 $self->parser_error("String ']]>' not allowed in character data", $reader);
@@ -479,13 +503,9 @@ sub CharData {
             else {
                 $chars .= ']';
             }
+            next;
         }
-        elsif ($reader->consume(qr/[^<&]/)) {
-            $chars .= $reader->consumed;
-        }
-        else {
-            last;
-        }
+        last;
     }
     
     $self->dochandler_method('characters', { Data => $chars });
@@ -614,7 +634,7 @@ sub AttReference {
             return $int_ents{$name};
         }
         else {
-            $self->parser_error("Undeclared entity", $reader);
+            $self->parser_error("Undeclared entity '$name'", $reader);
         }
     }
         
@@ -766,7 +786,6 @@ sub Comment {
 
 sub PI {
     my ($self, $reader) = @_;
-    
     if ($reader->match_string('<?')) {
         my ($target, $data);
         $target = $self->Name($reader) ||
@@ -814,7 +833,6 @@ sub Name {
     
     $reader->consume($NameChar);
     $name .= $reader->consumed;
-    
     return $name;
 }
 

@@ -1,4 +1,4 @@
-# $Id: Productions.pm,v 1.1.1.1 2001/10/25 19:44:25 matt Exp $
+# $Id: Productions.pm,v 1.2 2001/10/31 17:24:52 matt Exp $
 
 package XML::SAX::PurePerl::Productions;
 
@@ -38,9 +38,9 @@ if ($] < 5.007002) {
     $Letter = $BaseChar;
     
     # can't do this one without unicode
-    $CombiningChar = qr/^$/msx;
+    # $CombiningChar = qr/^$/msx;
     
-    $NameChar = qr/ $Letter | $Digit | [._:-] | $CombiningChar | $Extender /x;
+    $NameChar = qr/ $Letter | $Digit | [._:-] | $Extender /x;
     PERL
 }
 else {

@@ -1,5 +1,17 @@
 Revision history for Perl extension XML::SAX::PurePerl.
 
+0,80  Fri Nov 2  2001
+    - Major updates - tested against 119 files in the oasis
+      xmlconformance test suite. Passes all but 1 on 5.7.2,
+      and passes most on lower perls. Version reflects
+      the amount of changes done.
+    - However, it does not get all the events perfect yet.
+      Most document events will be right, but DTD events
+      are not complete yet.
+    - Many bugs fixed in the process of the above. Should
+      parse just about any document you can throw at it
+      now.
+
 0.02  Thu Oct 25 2001
     - Made work on 5.00503 (and maybe lower)
 

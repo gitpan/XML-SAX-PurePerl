@@ -1,4 +1,4 @@
-# $Id: DocType.pm,v 1.1.1.1 2001/10/25 19:44:25 matt Exp $
+# $Id: DocType.pm,v 1.3 2001/11/02 15:24:27 matt Exp $
 
 package XML::SAX::PurePerl;
 
@@ -16,9 +16,10 @@ sub doctypedecl {
         $dtd->{Name} = $self->Name($reader) ||
             $self->parser_error("Doctype declaration has no root element name", $reader);
         
-        $self->skip_whitespace($reader);
-        
-        $self->ExternalID($reader, $dtd);
+        if ($self->skip_whitespace($reader)) {
+            # might be externalid...
+            $self->ExternalID($reader, $dtd);
+        }
         
         $self->skip_whitespace($reader);
         
@@ -38,20 +39,26 @@ sub ExternalID {
     
     if ($reader->match_string('SYSTEM')) {
         $self->skip_whitespace($reader) ||
-            $self->parser_error("Not whitespace after SYSTEM identifier", $reader);
+            $self->parser_error("No whitespace after SYSTEM identifier", $reader);
         $self->SystemLiteral($reader, $dtd);
     }
     elsif ($reader->match_string('PUBLIC')) {
-        $self->skip_whitespace($reader);
+        $self->skip_whitespace($reader) ||
+            $self->parser_error("No whitespace after PUBLIC identifier", $reader);
         
-        if ($reader->match('"')) {
-            $reader->consume($PubidChar);
-            $dtd->{PublicId} = $reader->consumed;
-            $reader->match('"') || 
-                $self->parser_error("Invalid token in PUBLIC ID (doctype) declaration", $reader);
-            $self->skip_whitespace($reader) ||
-                $self->parser_error("Not whitespace after PUBLIC ID in DOCTYPE", $reader);
+        my $quote = $self->quote($reader) || 
+            $self->parser_error("Not a quote character in PUBLIC identifier", $reader);
+        
+        $reader->consume(qr/[^$quote]/);
+        my $pubid = $reader->consumed;
+        if ($pubid !~ /^($PubidChar)+$/) {
+            $self->parser_error("Invalid characters in PUBLIC identifier", $reader);
         }
+        
+        $reader->match($quote) || 
+            $self->parser_error("Invalid quote character ending PUBLIC identifier", $reader);
+        $self->skip_whitespace($reader) ||
+            $self->parser_error("Not whitespace after PUBLIC ID in DOCTYPE", $reader);
         
         $self->SystemLiteral($reader, $dtd);
     }
@@ -59,6 +66,7 @@ sub ExternalID {
         return 0;
     }
     
+    # FIXME - this is in the wrong place
     $self->lexhandler_method('start_dtd', $dtd);
     
     return 1;
@@ -81,9 +89,7 @@ sub InternalSubset {
     
     if ($reader->match('[')) {
         
-        while(1) {
-            last unless $self->markupdecl($reader) || $self->DeclSep($reader);
-        }
+        1 while $self->IntSubsetDecl($reader);
         
         $reader->match(']') ||
             $self->parser_error("No close bracket on internal subset", $reader);
@@ -94,14 +100,26 @@ sub InternalSubset {
     return 0;
 }
 
+sub IntSubsetDecl {
+    my ($self, $reader) = @_;
+
+    return $self->DeclSep($reader) || $self->markupdecl($reader);
+}
+
 sub DeclSep {
     my ($self, $reader) = @_;
-    
-    if ($self->PEReference($reader) ||
-        $self->skip_whitespace($reader))
-    {
+
+    if ($self->skip_whitespace($reader)) {
         return 1;
     }
+
+    if ($self->PEReference($reader)) {
+        return 1;
+    }
+    
+#    if ($self->ParsedExtSubset($reader)) {
+#        return 1;
+#    }
     
     return 0;
 }

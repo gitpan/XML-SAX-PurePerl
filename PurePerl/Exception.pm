@@ -1,4 +1,4 @@
-# $Id: Exception.pm,v 1.1.1.1 2001/10/25 19:44:25 matt Exp $
+# $Id: Exception.pm,v 1.2 2001/11/01 10:42:02 matt Exp $
 
 package XML::SAX::PurePerl::Exception;
 
@@ -37,6 +37,7 @@ sub new {
 
 sub stringify {
     my $self = shift;
+    local $^W;
     return $self->{Message} . " [Ln: " . $self->{LineNumber} . 
                 ", Col: " . $self->{ColumnNumber} . "]" .
                 ($StackTrace ? stackstring($self->{StackTrace}) : "") . "\n";

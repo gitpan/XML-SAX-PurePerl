@@ -1,4 +1,4 @@
-# $Id: Reader.pm,v 1.2 2001/10/25 20:00:50 matt Exp $
+# $Id: Reader.pm,v 1.4 2001/11/01 17:40:01 matt Exp $
 
 package XML::SAX::PurePerl::Reader;
 
@@ -140,6 +140,8 @@ sub current {
 
 sub buffer {
     my $self = shift;
+    # warn("buffering: '$_[0]' + '$self->{current}' + '$self->{buffer}'\n");
+    local $^W;
     $self->{buffer} = $_[0] . $self->{current} . $self->{buffer};
     $self->next;
 }

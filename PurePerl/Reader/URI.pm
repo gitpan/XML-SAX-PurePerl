@@ -1,4 +1,4 @@
-# $Id: URI.pm,v 1.2 2001/10/25 20:00:52 matt Exp $
+# $Id: URI.pm,v 1.3 2001/11/01 17:40:01 matt Exp $
 
 package XML::SAX::PurePerl::Reader::URI;
 
@@ -18,6 +18,12 @@ sub new {
     if (-e $uri && -f _) {
         my $fh = gensym;
         open($fh, $uri) || die "Cannot open file $uri : $!";
+        return XML::SAX::PurePerl::Reader::Stream->new($fh);
+    }
+    elsif ($uri =~ /^file:(.*)$/ && -e $1 && -f _) {
+        my $file = $1;
+        my $fh = gensym;
+        open($fh, $file) || die "Cannot open file $file : $!";
         return XML::SAX::PurePerl::Reader::Stream->new($fh);
     }
     else {

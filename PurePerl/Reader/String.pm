@@ -1,4 +1,4 @@
-# $Id: String.pm,v 1.1.1.1 2001/10/25 19:44:25 matt Exp $
+# $Id: String.pm,v 1.2 2001/11/01 17:40:01 matt Exp $
 
 package XML::SAX::PurePerl::Reader::String;
 
@@ -29,7 +29,7 @@ sub new {
 sub next {
     my $self = shift;
     
-    $self->{discarded} .= $self->{current};
+    $self->{discarded} .= $self->{current} if defined $self->{current};
     
     # check for chars in buffer first.
     if (length($self->{buffer})) {

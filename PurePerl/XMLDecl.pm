@@ -1,4 +1,4 @@
-# $Id: XMLDecl.pm,v 1.1.1.1 2001/10/25 19:44:25 matt Exp $
+# $Id: XMLDecl.pm,v 1.2 2001/11/02 15:24:27 matt Exp $
 
 package XML::SAX::PurePerl;
 
@@ -8,31 +8,37 @@ use XML::SAX::PurePerl::Productions qw($S $VersionNum $EncNameStart $EncNameEnd)
 sub XMLDecl {
     my ($self, $reader) = @_;
     
-    $reader->match_string("<?xml") && $reader->match($S)
-        || return; # no XML decl is OK
-    $self->skip_whitespace($reader);
-    
-    # get version attribute
-    $self->VersionInfo($reader) || 
-        $self->parser_error("XML Declaration lacks required version attribute", $reader);
-    
-    if (!$self->skip_whitespace($reader)) {
-        $reader->match_string('?>') || $self->parser_error("Syntax error", $reader);
-        return;
-    }
-    
-    if ($self->EncodingDecl($reader)) {
+    if ($reader->match_string("<?xml") && $reader->match($S)) {
+        $self->skip_whitespace($reader);
+        
+        # get version attribute
+        $self->VersionInfo($reader) || 
+            $self->parser_error("XML Declaration lacks required version attribute", $reader);
+        
         if (!$self->skip_whitespace($reader)) {
             $reader->match_string('?>') || $self->parser_error("Syntax error", $reader);
             return;
         }
+        
+        if ($self->EncodingDecl($reader)) {
+            if (!$self->skip_whitespace($reader)) {
+                $reader->match_string('?>') || $self->parser_error("Syntax error", $reader);
+                return;
+            }
+        }
+        
+        $self->SDDecl($reader);
+        
+        $self->skip_whitespace($reader);
+        
+        $reader->match_string('?>') || $self->parser_error("Syntax error in XML declaration", $reader);
     }
-    
-    $self->SDDecl($reader);
-    
-    $self->skip_whitespace($reader);
-    
-    $reader->match_string('?>') || $self->parser_error("Syntax error in XML declaration", $reader);
+    else {
+        # no xml decl
+        if (!$reader->get_encoding) {
+            $reader->set_encoding("UTF-8");
+        }
+    }
 }
 
 sub VersionInfo {

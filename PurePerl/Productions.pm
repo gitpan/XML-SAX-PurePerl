@@ -1,4 +1,4 @@
-# $Id$
+# $Id: Productions.pm,v 1.1.1.1 2001/10/25 19:44:25 matt Exp $
 
 package XML::SAX::PurePerl::Productions;
 

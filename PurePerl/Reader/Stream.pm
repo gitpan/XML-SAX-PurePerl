@@ -1,4 +1,4 @@
-# $Id$
+# $Id: Stream.pm,v 1.2 2001/10/25 20:00:52 matt Exp $
 
 package XML::SAX::PurePerl::Reader::Stream;
 
@@ -13,7 +13,7 @@ sub new {
     my $class = shift;
     my $ioref = shift;
     if ($] >= 5.007002) {
-        binmode($ioref, ':raw'); # start in raw mode
+        eval q(binmode($ioref, ':raw');); # start in raw mode
     }
     return bless { fh => $ioref, line => 1, col => 0, buffer => '' }, $class;
 }
@@ -54,10 +54,10 @@ sub set_encoding {
     my ($encoding) = @_;
     
     if ($] >= 5.007002) {
-        binmode($self->{fh}, ":encoding($encoding)");
+        eval 'binmode($self->{fh}, ":encoding($encoding)");';
     }
     else {
-        die "Only ASCII encoding allowed without perl 5.7.2 or higher. You tried: $encoding" if $encoding !~ /ASCII/i;
+        die "Only ASCII encoding allowed without perl 5.7.2 or higher. You tried: $encoding" if $encoding !~ /(ASCII|UTF\-?8)/i;
     }
     $self->{encoding} = $encoding;
 }

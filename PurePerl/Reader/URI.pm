@@ -1,4 +1,4 @@
-# $Id$
+# $Id: URI.pm,v 1.2 2001/10/25 20:00:52 matt Exp $
 
 package XML::SAX::PurePerl::Reader::URI;
 
@@ -6,6 +6,7 @@ use strict;
 
 use XML::SAX::PurePerl::Reader;
 use File::Temp qw(tempfile);
+use Symbol;
 
 ## NOTE: This is *not* a subclass of Reader. It just returns Stream or String
 ## Reader objects depending on what it's capabilities are.
@@ -15,7 +16,8 @@ sub new {
     my $uri = shift;
     # request the URI
     if (-e $uri && -f _) {
-        open(my $fh, $uri) || die "Cannot open file $uri : $!";
+        my $fh = gensym;
+        open($fh, $uri) || die "Cannot open file $uri : $!";
         return XML::SAX::PurePerl::Reader::Stream->new($fh);
     }
     else {

@@ -1,4 +1,4 @@
-# $Id$
+# $Id: Reader.pm,v 1.2 2001/10/25 20:00:50 matt Exp $
 
 package XML::SAX::PurePerl::Reader;
 
@@ -99,11 +99,13 @@ sub matched {
     return $self->{matched};
 }
 
+my $unpack_type = ($] >= 5.007002) ? 'U*' : 'C*';
+
 sub match_string {
     my $self = shift;
     my ($str) = @_;
     my $matched = '';
-    for my $char (map { chr } unpack('U*', $str)) {
+    for my $char (map { chr } unpack($unpack_type, $str)) {
         if ($self->match($char)) {
             $matched .= $self->{matched};
         }

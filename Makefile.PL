@@ -5,17 +5,14 @@ require 5.00503;
 if ($] < 5.007002) {
     print <<EOT;
 Perl 5.7.2 is required (actually bleedperl 11884 or higher) for this module
-to work due to advanced unicode functionality only supported in the very latest
-perl.
+to work with encodings other than ASCII and UTF-8, due to advanced unicode 
+functionality only supported in the very latest perl.
 
-However, it has been made to "work" on lower perl versions, with the
-exception of having no support for alternate encodings other than ASCII.
-If you decide to continue the installation you will see many test
-failures because of this. If installing under the CPAN shell, you will
-have to do a "force install".
+However, it has been made to work on lower perl versions, but you will
+get an exception thrown if you try and parse files in other encodings.
 
 EOT
-    if (prompt("Do you wish to continue?", "n") !~ /^y/i) {
+    if (prompt("Do you wish to continue?", "y") !~ /^y/i) {
         exit;
     }
 }

@@ -6,7 +6,7 @@ use Carp;
 
 #use 5.7.2;
 
-$VERSION = '0.01';
+$VERSION = '0.02';
 
 use XML::SAX::PurePerl::Productions qw($S $Letter $NameChar $Any $CharMinusDash $Char);
 use XML::SAX::PurePerl::Reader;
